@@ -6,6 +6,7 @@ import com.example.online_shop.model.entity.ItemInOrder;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 
@@ -22,6 +23,20 @@ public class ItemInOrderMapper {
         return itemInOrder;
     }
 
+    public ItemDto toDto(ItemInOrder item) {
+        ItemDto itemInOrder = mapper.map(item, ItemDto.class);
+        itemInOrder.setId(item.getItemId());
+        return itemInOrder;
+    }
+
+    public Flux<ItemDto> toItemInOrderListFromFlux(Flux<ItemInOrder> entities) {
+        return entities.map(this::toDto);
+    }
+
+    public List<ItemDto> toItemDtoList(List<ItemInOrder> entities) {
+        return entities.stream().map(this::toDto).toList();
+    }
+
     public List<ItemInOrder> toItemInOrderList(List<ItemDto> entities) {
         return entities.stream().map(this::toItemInOrder).toList();
     }
@@ -30,7 +45,4 @@ public class ItemInOrderMapper {
         return mapper.map(item, ItemDto.class);
     }
 
-    public List<ItemDto> toItemDtoList(List<OrderItemDetailDto> entities) {
-        return entities.stream().map(this::toItemInOrder).toList();
-    }
 }

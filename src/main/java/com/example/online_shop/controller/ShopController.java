@@ -68,7 +68,7 @@ public class ShopController {
 
     }
 
-    /**
+    /*
      * POST "/main/items/{id}" - изменить количество товара в корзине
      *
      * @param id     товара
@@ -101,7 +101,7 @@ public class ShopController {
 
     }
 
-    /**
+    /*
      * POST "/cart/items/{id}" - изменить количество товара в корзине
      *
      * @param id     товара
@@ -131,7 +131,7 @@ public class ShopController {
                 .map(order -> "item");
     }
 
-    /**
+    /*
      * POST "/items/{id}" - изменить количество товара в корзине
      *
      * @param id     товара

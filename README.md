@@ -1,4 +1,4 @@
-📌 🛒 Online Shop — Витрина и покупки товаров
+📌 🛒 Online store showcase — Витрина и покупки товаров
 
 ✏️ Описание
 
@@ -54,7 +54,7 @@
 
 ⦁ Локально:
 
-java -jar build/libs/online-shop-0.0.1-SNAPSHOT.jar
+java -jar build/libs/online-shop-0.0.2-SNAPSHOT.jar
 
 
 ⦁ В Docker-контейнере:

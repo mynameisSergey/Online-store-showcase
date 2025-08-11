@@ -1,12 +1,12 @@
 services:
-  Online-store-showcase:
+  online-shop:
     build: ./
     ports:
       - "8084:8084"
     depends_on:
       -db
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/Online-store-showcase
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/online-shop
       - SPRING_DATASOURCE_USERNAME=shop
       - SPRING_DATASOURCE_PASSWORD=root
 

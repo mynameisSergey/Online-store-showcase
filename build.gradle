@@ -6,7 +6,7 @@ plugins {
 
 group = 'com.example'
 version = '0.0.2-SNAPSHOT'
-description = 'Online-store-showcase'
+description = 'online-shop'
 
 java {
 	toolchain {

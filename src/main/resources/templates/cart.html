@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Корзина товаров</title>
+</head>
+
+<body>
+<a href="/orders" style="float:right;">
+    <b>ЗАКАЗЫ &cudarrr;</b>
+</a>
+<a href="/main/items" style="float:right;">
+    <b>ГЛАВНАЯ &cudarrr;</b>
+</a>
+<table style="width:70%;margin-left:auto;margin-right:auto;">
+    <tr th:each="item : ${items}">
+        <td>
+            <table>
+                <tr>
+                    <td>
+                        <img width="300" height="300" th:src="${item.getImagePath()}">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <b th:text="${item.getTitle()}"></b>
+                    </td>
+                    <td>
+                        <b th:text="${item.getPrice()}+' руб.'"></b>
+                    </td>
+                </tr>
+                <tr><td th:text="${item.getDescription()}"></td></tr>
+                <tr>
+                    <td>
+                        <form th:action="${'/cart/items/'+item.getId()}" method="post">
+                            <button name="action" value="minus">-</button>
+                            <span th:text="${item.getCount()}"></span>
+                            <button name="action" value="plus">+</button>
+                            <button name="action" value="delete" style="float:right;">&cross;</button>
+                        </form>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td style="text-align:right">
+            <b th:text="'Итого: '+${total}+' руб.'"></b>
+        </td>
+    </tr>
+    <tr>
+        <td style="text-align:right">
+            <form action="/buy" method="post" th:if="${!empty}">
+                <button>Купить</button>
+            </form>
+        </td>
+    </tr>
+</table>
+</body>
+
+</html>

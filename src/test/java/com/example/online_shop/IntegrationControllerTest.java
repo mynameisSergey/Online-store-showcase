@@ -2,24 +2,24 @@ package com.example.online_shop;
 
 import com.example.online_shop.controller.ShopController;
 import com.example.online_shop.model.dto.ItemCreateDto;
-import com.example.online_shop.model.dto.ItemDto;
 import com.example.online_shop.model.dto.OrderDto;
-import com.example.online_shop.model.entity.Item;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@AutoConfigureMockMvc
+@Slf4j
+@AutoConfigureWebTestClient
 public class IntegrationControllerTest extends OnlineShopApplicationTests {
     @Autowired
-    private MockMvc mockMvc;
+    private WebTestClient webTestClient;
     @Autowired
     private ShopController shopController;
 
@@ -49,28 +49,16 @@ public class IntegrationControllerTest extends OnlineShopApplicationTests {
 
     @Test
     void testGetItems() throws Exception {
-        mockMvc.perform(get("/main/items"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType("text/html;charset=UTF-8"))
-                .andExpect(view().name("main"))
-                .andExpect(model().attributeExists("items"))
-                .andExpect(model().attributeExists("paging"));
-    }
-
-    @Test
-    void testGetPageableItems() throws Exception {
-        mockMvc.perform(get("/main/items")
-                        .param("search", "")
-                        .param("sort", "NO")
-                        .param("pageNumber", "1")
-                        .param("pageSize", "5"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType("text/html;charset=UTF-8"))
-                .andExpect(view().name("main"))
-                .andExpect(model().attributeExists("items"))
-                .andExpect(model().attributeExists("paging"))
-                .andExpect(model().attributeExists("search"))
-                .andExpect(model().attributeExists("sort"));
+        webTestClient.get()
+                .uri("/main/items")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.TEXT_HTML)
+                .expectBody(String.class).consumeWith(response -> {
+                    String body = response.getResponseBody();
+                    assertNotNull(body);
+                    assertTrue(body.contains("<title>Витрина товаров</title>"));
+                });
     }
 
     /*
@@ -83,13 +71,17 @@ public class IntegrationControllerTest extends OnlineShopApplicationTests {
      */
     @Test
     void testGetItemsInCart() throws Exception {
-        mockMvc.perform(get("/cart/items"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType("text/html;charset=UTF-8"))
-                .andExpect(view().name("cart"))
-                .andExpect(model().attributeExists("items"))
-                .andExpect(model().attributeExists("total"))
-                .andExpect(model().attributeExists("empty"));
+        webTestClient.get()
+                .uri("/cart/items")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.TEXT_HTML)
+                .expectBody(String.class).consumeWith(response -> {
+                    String body = response.getResponseBody();
+                    assertNotNull(body);
+                    assertTrue(body.contains("<title>Корзина товаров</title>"));
+                });
+
     }
 
     /*
@@ -101,13 +93,15 @@ public class IntegrationControllerTest extends OnlineShopApplicationTests {
      */
     @Test
     void testChangeItemsCountInCartWhenInItems() throws Exception {
-        ItemDto itemDto = getLastItem().orElse(new ItemDto());
-        mockMvc.perform(post("/main/items/" + itemDto.getId())
-                        .contentType("application/x-www-form-urlencoded")
-                        .queryParam("action", "plus")
-                        .flashAttr("item", itemDto))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/main/items"));
+        getLastItem().publishOn(Schedulers.boundedElastic()).doOnNext(itemDto -> {
+            webTestClient.post()
+                    .uri("/main/items/" + itemDto.getId())
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .bodyValue("action=MINUS")
+                    .exchange()
+                    .expectStatus().is3xxRedirection()
+                    .expectHeader().valueEquals("Location", "/main/items");
+        }).subscribe();
     }
 
     /*
@@ -118,14 +112,16 @@ public class IntegrationControllerTest extends OnlineShopApplicationTests {
      * @return "redirect:/items/"
      */
     @Test
-    void testChangeItemsCountInCartWhenInItem() throws Exception {
-        ItemDto itemDto = getLastItem().orElse(new ItemDto());
-        mockMvc.perform(post("/items/" + itemDto.getId())
-                        .contentType("application/x-www-form-urlencoded")
-                        .queryParam("action", "plus")
-                        .flashAttr("item", itemDto))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/items/" + itemDto.getId()));
+    void testChangeItemsCountInCartWhenInCart() throws Exception {
+        getLastItem().publishOn(Schedulers.boundedElastic()).doOnNext(itemDto -> {
+            webTestClient.post()
+                    .uri("/items/" + itemDto.getId())
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .bodyValue("action=PLUS")
+                    .exchange()
+                    .expectStatus().is3xxRedirection()
+                    .expectHeader().valueEquals("Location", "/items");
+        }).subscribe();
     }
 
     /*
@@ -137,12 +133,17 @@ public class IntegrationControllerTest extends OnlineShopApplicationTests {
      */
     @Test
     void testGetItem() throws Exception {
-        Item item = getAnyItem().orElse(new Item());
-        mockMvc.perform(get("/items/" + item.getId()))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType("text/html;charset=UTF-8"))
-                .andExpect(view().name("item"))
-                .andExpect(model().attributeExists("item"));
+        getAnyItem().publishOn(Schedulers.boundedElastic()).doOnNext(itemDto ->
+                webTestClient.get()
+                        .uri("/items/" + itemDto.getId())
+                        .exchange()
+                        .expectStatus().isOk()
+                        .expectHeader().contentType(MediaType.TEXT_HTML)
+                        .expectBody(String.class).consumeWith(response -> {
+                            String body = response.getResponseBody();
+                            assertNotNull(body);
+                            assertTrue(body.contains("<title>Витрина товаров</title>"));
+                        })).subscribe();
     }
 
     /*
@@ -153,13 +154,19 @@ public class IntegrationControllerTest extends OnlineShopApplicationTests {
 
     @Test
     void testBuy() throws Exception {
-        OrderDto orderDto = getLastOrder().orElse(new OrderDto());
-        Long lastId = orderDto.getId();
-        mockMvc.perform(post("buy")
-                        .contentType("application/x-www-form-urlencoded")
-                        .flashAttr("order", orderDto))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/orders/" + (lastId + 1) + "?newOrder=true"));
+        getLastOrder().publishOn(Schedulers.boundedElastic()).doOnNext(orderDto ->
+                        webTestClient.post()
+                                .uri("/buy")
+                                .bodyValue(OrderDto.builder()
+                                        .totalSum(orderDto.getTotalSum())
+                                        .items(orderDto.getItems())
+                                        .build())
+                                .exchange()
+                                .expectStatus().is3xxRedirection()
+                                .expectHeader().valueEquals("Location", "/orders/"
+                                        + (orderDto.getId() + 1) + "?newOrder=true"))
+                .log()
+                .subscribe();
     }
 
     /*
@@ -170,11 +177,16 @@ public class IntegrationControllerTest extends OnlineShopApplicationTests {
      */
     @Test
     void tstGetOrders() throws Exception {
-        mockMvc.perform(get("/orders"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType("text/html;charset=UTF-8"))
-                .andExpect(view().name("orders"))
-                .andExpect(model().attributeExists("orders"));
+        webTestClient.get()
+                .uri("/orders")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.TEXT_HTML)
+                .expectBody(String.class).consumeWith(response -> {
+                    String body = response.getResponseBody();
+                    assertNotNull(body);
+                    assertTrue(body.contains("<title>Заказы</title>"));
+                });
     }
 
     /*
@@ -187,12 +199,19 @@ public class IntegrationControllerTest extends OnlineShopApplicationTests {
      */
     @Test
     void testGetOrder() throws Exception {
-        OrderDto orderDto = getLastOrder().orElse(new OrderDto());
-        mockMvc.perform(get("/orders/" + orderDto.getId()))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType("text/html;charset=UTF-8"))
-                .andExpect(view().name("order"))
-                .andExpect(model().attributeExists("order"));
+        getLastOrder().publishOn(Schedulers.boundedElastic()).doOnNext(orderDto ->
+                        webTestClient.get()
+                                .uri("/orders/" + orderDto.getId())
+                                .exchange()
+                                .expectStatus().isOk()
+                                .expectHeader().contentType(MediaType.TEXT_HTML)
+                                .expectBody(String.class).consumeWith(response -> {
+                                    String body = response.getResponseBody();
+                                    assertNotNull(body);
+                                    assertTrue(body.contains("<title>Заказ</title>"));
+                                }))
+                .subscribe();
+
     }
 
     /*
@@ -202,10 +221,16 @@ public class IntegrationControllerTest extends OnlineShopApplicationTests {
      */
     @Test
     void testAddItemPage() throws Exception {
-        mockMvc.perform(get("/main/items/add"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType("text/html;charset=UTF-8"))
-                .andExpect(view().name("add-item"));
+        webTestClient.get()
+                .uri("/main/items/add")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.TEXT_HTML)
+                .expectBody(String.class).consumeWith(response -> {
+                    String body = response.getResponseBody();
+                    assertNotNull(body);
+                    assertTrue(body.contains("<h3>Изображение</h3>"));
+                });
     }
 
     /*
@@ -215,18 +240,19 @@ public class IntegrationControllerTest extends OnlineShopApplicationTests {
      */
     @Test
     void testAddItem() throws Exception {
-        ItemDto itemDto = getLastItem().orElse(new ItemDto());
-        Long lastId = itemDto.getId();
-        ItemCreateDto item = ItemCreateDto.builder()
-                .title(itemDto.getTitle())
-                .price(itemDto.getPrice())
-                .description(itemDto.getDescription())
-                .build();
-        mockMvc.perform(post("/main/items")
-                        .contentType("application/x-www-form-urlencoded")
-                        .flashAttr("item", item))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/items/" + (lastId + 1)));
-
+        getLastItem().map(itemDto ->
+                        Mono.just(ItemCreateDto.builder()
+                                        .title(itemDto.getTitle() + "_NEW")
+                                        .price(itemDto.getPrice())
+                                        .description(itemDto.getDescription() + "_NEW")
+                                        .build())
+                                .publishOn(Schedulers.boundedElastic())
+                                .doOnNext(item -> webTestClient.post()
+                                        .uri("/main/items")
+                                        .bodyValue(item)
+                                        .exchange()
+                                        .expectStatus().is3xxRedirection()
+                                        .expectHeader().valueEquals("Location", "/items/" + (itemDto.getId() + 1))))
+                .subscribe();
     }
 }

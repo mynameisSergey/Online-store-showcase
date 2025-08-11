@@ -1,4 +1,4 @@
-package com.example.online_shop.configuration;
+package com.example.configuration;
 
 import com.example.online_shop.model.dto.CartDto;
 import lombok.extern.slf4j.Slf4j;

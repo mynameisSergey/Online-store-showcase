@@ -16,11 +16,6 @@ import java.util.Map;
 public class CartService {
     private final CartDto cart;
 
-    public int getItemCountInCart(Long itemId) { // СЧИТАЕТ КОЛИЧЕСТВО ТОВАРА В КОРЗИНЕ ПО АЙДИ
-        if (cart.getItems().containsKey(itemId)) return cart.getItems().get(itemId).getCount();
-        return 0;
-    }
-
     public void clearCart() {
         cart.setItems(new HashMap<>());
         cart.setTotal(BigDecimal.valueOf(0));
@@ -29,6 +24,11 @@ public class CartService {
 
     public CartDto getCart() {
         return cart;
+    }
+
+    public int getItemCountInCart(Long itemId) { // СЧИТАЕТ КОЛИЧЕСТВО ТОВАРА В КОРЗИНЕ ПО АЙДИ
+        if (cart.getItems().containsKey(itemId)) return cart.getItems().get(itemId).getCount();
+        return 0;
     }
 
     public Map<Long, ItemDto> getItemsInCart() {

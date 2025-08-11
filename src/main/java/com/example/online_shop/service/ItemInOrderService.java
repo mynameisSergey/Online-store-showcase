@@ -4,6 +4,8 @@ import com.example.online_shop.model.entity.ItemInOrder;
 import com.example.online_shop.repository.ItemInOrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
@@ -12,7 +14,15 @@ import java.util.List;
 public class ItemInOrderService {
     private final ItemInOrderRepository itemInOrderRepository;
 
-    public void saveItemsInOrder(List<ItemInOrder> items) {
-        itemInOrderRepository.saveAll(items);
+    public Mono<ItemInOrder> save(ItemInOrder item) {
+        return itemInOrderRepository.save(item);
+    }
+
+    public Flux<ItemInOrder> getItemInOrderByOrderId(Long orderId) {
+        return itemInOrderRepository.getItemInOrderByOrderId(orderId);
+    }
+
+    public Flux<ItemInOrder> getItems() {
+        return itemInOrderRepository.findAll();
     }
 }

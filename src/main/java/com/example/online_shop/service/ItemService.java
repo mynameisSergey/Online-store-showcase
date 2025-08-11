@@ -12,17 +12,20 @@ import com.example.online_shop.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
+import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,67 +38,107 @@ public class ItemService {
     @Value("${shop.items.row:5}")
     int itemsRowCount;
 
-    public ItemsWithPagingDto getItems(String search, String sort, int pageNumber, int pageSize) {
-        Pageable page = switch (ESort.valueOf(sort.toUpperCase())) { // преобразует строку в enum
+    public Mono<ItemsWithPagingDto> getItems(String search, String sort, int pageNumber, int pageSize) {
+        log.debug("Start getItems: pageNumber={}, pageSize={}", pageNumber, pageSize);
+
+        Pageable page = switch (ESort.valueOf(sort.toUpperCase())) {
             case NO -> PageRequest.of(pageNumber - 1, pageSize);
-            case ALPHA -> PageRequest.of(pageNumber - 1, pageSize, Sort.by(Sort.Direction.ASC, "title"));
-            case PRICE -> PageRequest.of(pageNumber - 1, pageSize, Sort.by(Sort.Direction.ASC, "price"));
+            case ALPHA -> PageRequest.of(pageNumber - 1, pageSize, Sort.by("title"));
+            case PRICE -> PageRequest.of(pageNumber - 1, pageSize, Sort.by("price"));
         };
 
-        Page<Item> items;
-        if (search != null && !search.isBlank())
-            items = itemRepository.getItemsByTitleLike(search, page);
-        else
-            items = itemRepository.findAll(page);
-        List<ItemDto> itemsDto = itemMapper.toListDto(items);
-        itemsDto.forEach(item -> item.setCount(cartService.getItemCountInCart(item.getId())));
+        Flux<Item> itemsFlux = (search!= null &&!search.isBlank())? itemRepository.getItemsByTitleLike(search, page)
+                : itemRepository.findBy(page);
 
-        PagingParametersDto pagingParametersDto = PagingParametersDto.builder()
-                .pageNumber(pageNumber)
-                .pageSize(pageSize)
-                .hasPrevious(pageNumber > 1)
-                .hasNext(pageNumber < Math.ceilDiv(itemRepository.count(), pageSize)) //считает всего элементов в базе
-                .build();
-
-        AtomicInteger index = new AtomicInteger();
-        List<List<ItemDto>> itemsDtoPartitions = itemsDto.stream()
-                .collect(Collectors.groupingBy(it -> index.getAndIncrement() / itemsRowCount)) // создаем мапу со списками по 5 товаров
-                .values()
-                .stream().toList();
-        return new ItemsWithPagingDto(itemsDtoPartitions, pagingParametersDto);
-
-    }
-
-    public void actionWithItemInCart(Long itemId, String action) {
-        Map<Long, ItemDto> itemsInCart = cartService.getItemsInCart();
-        ItemDto itemInCart;
-        if (itemsInCart.containsKey(itemId)) itemInCart = itemsInCart.get(itemId);
-        else itemInCart = getItemDtoById(itemId);
-
-        switch (ECartAction.valueOf(action.toUpperCase())) {
-            case PLUS -> itemInCart.setCount(itemInCart.getCount() + 1);
-            case MINUS -> {
-                if (itemInCart.getCount() >= 1) itemInCart.setCount(itemInCart.getCount() - 1);
+        Mono<List<List<ItemDto>>> itemsDto = itemMapper.toListDto(itemsFlux).map(dto -> {
+            dto.setCount(cartService.getItemCountInCart(dto.getId()));
+            return dto;
+        }).collectList().map(list -> {
+            List<List<ItemDto>> grouped = new ArrayList<>();
+            for (int i = 0; i < list.size(); i++) {
+                int groupIndex = i / itemsRowCount;
+                if (grouped.size() <= groupIndex) {
+                    grouped.add(new ArrayList<>());
+                }
+                grouped.get(groupIndex).add(list.get(i));
             }
-            case DELETE -> itemInCart.setCount(0);
-        }
-        if (itemInCart.getCount() == 0) itemsInCart.remove(itemId);
-        else itemsInCart.put(itemId, itemInCart);
-        cartService.refresh(itemsInCart, itemInCart);
+            return grouped;
+        });
+
+        Mono<Boolean> hasNext = itemRepository.count().map(count -> pageNumber < (int) Math.ceil((double) count / pageSize));
+
+        Mono<PagingParametersDto> pagingDto = Mono.just(PagingParametersDto.builder().pageNumber(pageNumber)
+                .pageSize(pageSize).hasPrevious(pageNumber > 1).build())
+                .zipWith(hasNext, (paging, next) -> {
+            paging.setHasNext(next);
+            return paging;
+        }).log();
+
+        return Mono.zip(pagingDto, itemsDto).map(tuple -> {
+            ItemsWithPagingDto result = new ItemsWithPagingDto();
+            result.setPaging(tuple.getT1());
+            result.setItems(tuple.getT2());
+            return result;
+        });
     }
 
-    public ItemDto getItemDtoById(Long id) {
-        ItemDto item = itemMapper.toDto(itemRepository.findById(id).orElse(new Item()));
-        item.setCount(cartService.getItemCountInCart(id));
-        return item;
+    public Mono<ItemDto> actionWithItemInCart(Long itemId, String action) {
+        Map<Long, ItemDto> itemsInCart = cartService.getItemsInCart();
+        return (itemsInCart.containsKey(itemId) ? Mono.just(itemsInCart.get(itemId)) :
+                getItemDtoById(itemId))
+                .map(item -> {
+                    switch (ECartAction.valueOf(action.toUpperCase())) {
+                        case PLUS -> item.setCount(item.getCount() + 1);
+                        case MINUS -> {
+                            if (item.getCount() >= 1) item.setCount(item.getCount() - 1);
+                        }
+                        case DELETE -> item.setCount(0);
+                    }
+                    if (item.getCount() == 0) itemsInCart.remove(itemId);
+                    else itemsInCart.put(itemId, item);
+                    cartService.refresh(itemsInCart, item);
+                    return item;
+                });
     }
 
-    public byte[] getImage(Long id) {
-        return itemRepository.findById(id).orElse(new Item()).getImage();
+    public Mono<ItemDto> getItemDtoById(Long id) {
+        return itemRepository.findById(id)
+                .map(itemMapper::toDto)
+                .map(itemDto -> {
+                    itemDto.setCount(cartService.getItemCountInCart(id));
+                    return itemDto;
+                });
+    }
+
+    public Mono<byte[]> getImage(Long id) {
+        return itemRepository.findById(id)
+                .map(Item::getImage).onErrorComplete();
     }
 
     @Transactional
-    public ItemDto saveItem(ItemCreateDto item) {
-        return itemMapper.toDto(itemRepository.save(itemMapper.toItem(item)));
+    public Mono<ItemDto> saveItem(Mono<ItemCreateDto> itemCreateDtoMono) {
+        log.debug("Start saveItem: item={}, thread={}", itemCreateDtoMono, Thread.currentThread().getName());
+
+        return itemCreateDtoMono.flatMap(dto -> {
+            if (dto.getImage() == null) {
+                // Нет картинки — просто мапим и сохраняем
+                Item item = itemMapper.toItem(dto);
+                return itemRepository.save(item).log().map(itemMapper::toDto);
+            } else {
+                // Есть картинка — считываем байты картинки реактивно
+                return DataBufferUtils.join(dto.getImage().content()).publishOn(Schedulers.boundedElastic())
+                        .map(dataBuffer -> {
+                    try (var is = dataBuffer.asInputStream()) {
+                        return is.readAllBytes();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }).zipWith(Mono.just(itemMapper.toItem(dto)), (imageBytes, item) -> {
+                    item.setImage(imageBytes);
+                    return item;
+                }).flatMap(itemRepository::save).map(itemMapper::toDto);
+            }
+        });
     }
+
 }

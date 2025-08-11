@@ -12,9 +12,14 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class OrderDto {
+public class OrderDto implements Comparable<OrderDto> {
     private Long id;
     private List<ItemDto> items;
-    @Builder.Default
-    private BigDecimal totalSum = BigDecimal.valueOf(0);
+    private BigDecimal totalSum;
+
+    @Override
+    public int compareTo(OrderDto o) {
+        return Long.compare(o.id, this.id);
+
+    }
 }

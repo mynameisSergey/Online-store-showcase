@@ -5,8 +5,8 @@ plugins {
 }
 
 group = 'com.example'
-version = '0.0.1-SNAPSHOT'
-description = 'online-shop'
+version = '0.0.2-SNAPSHOT'
+description = 'Online-store-showcase'
 
 java {
 	toolchain {
@@ -25,21 +25,26 @@ repositories {
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-	implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	implementation 'org.springframework.data:spring-data-relational'
 	implementation 'org.liquibase:liquibase-core'
 	implementation 'org.modelmapper:modelmapper:2.3.5'
+	implementation 'io.r2dbc:r2dbc-pool'
+	implementation 'org.synchronoss.cloud:nio-multipart-parser:1.1.0'
 	compileOnly 'org.projectlombok:lombok'
-	runtimeOnly 'org.postgresql:postgresql'
+	runtimeOnly 'org.postgresql:r2dbc-postgresql'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.projectlombok:lombok:1.18.26'
-
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testImplementation "org.springframework.boot:spring-boot-testcontainers"
+	testImplementation "org.testcontainers:postgresql"
+	testImplementation "org.testcontainers:r2dbc"
+	testImplementation "org.testcontainers:junit-jupiter"
+	testImplementation "org.springframework.boot:spring-boot-testcontainers"
 }
 
 tasks.named('test') {

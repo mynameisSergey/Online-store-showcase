@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 @Service
 @RequiredArgsConstructor
@@ -116,29 +117,33 @@ public class ItemService {
     }
 
     @Transactional
-    public Mono<ItemDto> saveItem(Mono<ItemCreateDto> itemCreateDtoMono) {
-        log.debug("Start saveItem: item={}, thread={}", itemCreateDtoMono, Thread.currentThread().getName());
-
-        return itemCreateDtoMono.flatMap(dto -> {
-            if (dto.getImage() == null) {
-                // Нет картинки — просто мапим и сохраняем
-                Item item = itemMapper.toItem(dto);
-                return itemRepository.save(item).log().map(itemMapper::toDto);
-            } else {
-                // Есть картинка — считываем байты картинки реактивно
-                return DataBufferUtils.join(dto.getImage().content()).publishOn(Schedulers.boundedElastic())
-                        .map(dataBuffer -> {
-                    try (var is = dataBuffer.asInputStream()) {
-                        return is.readAllBytes();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }).zipWith(Mono.just(itemMapper.toItem(dto)), (imageBytes, item) -> {
-                    item.setImage(imageBytes);
-                    return item;
-                }).flatMap(itemRepository::save).map(itemMapper::toDto);
-            }
-        });
+    public Mono<ItemDto> saveItem(Mono<ItemCreateDto> itemCreatedDto) {
+        log.debug("Start saveItem: item={}, thread={}", itemCreatedDto, Thread.currentThread().getName());
+        return itemCreatedDto
+                .map(dto -> {
+                    if (dto.getImage() == null)
+                        return itemCreatedDto
+                                .map(itemMapper::toItem)
+                                .flatMap(itemRepository::save)
+                                .log()
+                                .map(itemMapper::toDto);
+                    return DataBufferUtils.join(dto.getImage().content())
+                            .publishOn(Schedulers.boundedElastic())
+                            .<byte[]>handle((dataBuffer, sink) -> {
+                                try {
+                                    sink.next(dataBuffer.asInputStream().readAllBytes());
+                                } catch (IOException e) {
+                                    sink.error(new RuntimeException(e));
+                                }
+                            })
+                            .zipWith(itemCreatedDto.map(itemMapper::toItem), (byteArray, item) -> {
+                                item.setImage(byteArray);
+                                return item;
+                            })
+                            .flatMap(itemRepository::save)
+                            .map(itemMapper::toDto);
+                })
+                .flatMap(Function.identity());
     }
 
 }

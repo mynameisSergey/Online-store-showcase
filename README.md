@@ -66,4 +66,5 @@ docker-compose up -d --build
 Выбирай удобный для себя способ! 😉
 
 Diagramm
-![](https://github.com/mynameisSergey/Online-store-showcase/tree/v2/images)
+
+![](https://github.com/mynameisSergey/Online-store-showcase/blob/v2/images/online-shop.png)

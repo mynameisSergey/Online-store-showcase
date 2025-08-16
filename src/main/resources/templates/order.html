@@ -1,24 +1,20 @@
-
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 
 <head>
     <title>Заказ</title>
-    <<<<<<< HEAD
     <meta charset="UTF-8">
-    =======
-    >>>>>>> main
 </head>
 
 <body>
 <a href="/orders" style="float:right;">
-    <b>ЗАКАЗЫ &cudarrr;</b>
+    <b>ЗАКАЗЫ ↓</b>
 </a>
 <a href="/cart/items" style="float:right;">
-    <b>КОРЗИНА &cudarrr;</b>
+    <b>КОРЗИНА ↓</b>
 </a>
 <a href="/main/items" style="float:right;">
-    <b>ГЛАВНАЯ &cudarrr;</b>
+    <b>ГЛАВНАЯ ↓</b>
 </a>
 <h1 style="text-align:center" th:if="${newOrder}">Поздравляем! Успешная покупка! &#128578;</h1>
 <table style="width:70%;margin-left:auto;margin-right:auto;">
@@ -27,33 +23,27 @@
             <h2 th:text="${'Заказ №'+order.getId()}"></h2>
         </td>
     </tr>
-    <tr th:each="item : ${order.getItems()}">
+    <tr th:each="item: ${order.getItems()}">
         <td>
             <table>
                 <tr>
                     <td>
                         <a th:href="${'/items/'+item.getId()}">
-                            <img width="300" height="300" th:src="${item.getImagePath()}">
+                            <img width="300" height="300" th:src="${item.getImagePath()}"/>
                         </a>
                     </td>
                 </tr>
                 <tr>
-                    <td>
-                        <b th:text="${item.getTitle()}"></b>
-                    </td>
-                    <td>
-                        <b th:text="${item.getCount()}+' шт.'"></b>
-                    </td>
-                    <td>
-                        <b th:text="${item.getPrice()*item.getCount()}+' руб.'"></b>
-                    </td>
+                    <td><b th:text="${item.getTitle()}"></b></td>
+                    <td><b th:text="${item.getCount()} + ' шт.'"></b></td>
+                    <td><b th:text="${item.getPrice() * item.getCount()} + ' руб.'"></b></td>
                 </tr>
             </table>
         </td>
     </tr>
     <tr>
         <td>
-            <h3 th:text="${'Сумма: '+order.getTotalSum()}+' руб.'"></h3>
+            <h3 th:text="${'Сумма: ' + order.getTotalSum()} + ' руб.'"></h3>
         </td>
     </tr>
 </table>

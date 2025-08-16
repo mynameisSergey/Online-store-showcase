@@ -1,0 +1,92 @@
+
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Витрина товаров</title>
+    <<<<<<< HEAD
+    <meta charset="UTF-8">
+    =======
+    >>>>>>> main
+</head>
+
+<body>
+<a href="/orders" style="float:right;">
+    <b>ЗАКАЗЫ &cudarrr;</b>
+</a>
+<a href="/cart/items" style="float:right;">
+    <b>КОРЗИНА &cudarrr;</b>
+</a>
+<table style="width:70%;margin-left:auto;margin-right:auto;">
+    <tr>
+        <td>
+            <form>
+                <p>
+                    <label for="search">Найти: </label>
+                    <input id="search" style="width:300px;" name="search" th:value="${search}">
+                    <button name="action">&#128269;</button>
+                </p>
+                <p>
+                    <label for="sort">Сортировка: </label>
+                    <select id="sort" name="sort" onchange="this.form.submit()">
+                        <option value="NO" th:selected="${sort=='NO'}">нет</option>
+                        <option value="ALPHA" th:selected="${sort=='ALPHA'}">по алфавиту</option>
+                        <option value="PRICE" th:selected="${sort=='PRICE'}">по цене</option>
+                    </select>
+                </p>
+                <p>
+                    <label for="pageSize">Число товаров: </label>
+                    <select id="pageSize" name="pageSize" onchange="this.form.submit()">
+                        <option value="5" th:selected="${paging.getPageSize()==5}">5</option>
+                        <option value="10" th:selected="${paging.getPageSize()==10}">10</option>
+                        <option value="20" th:selected="${paging.getPageSize()==20}">20</option>
+                        <option value="50" th:selected="${paging.getPageSize()==50}">50</option>
+                        <option value="100" th:selected="${paging.getPageSize()==100}">100</option>
+                    </select>
+                </p>
+                <p>
+                    <button th:if="${paging.isHasPrevious()}" name="pageNumber" th:value="${paging.getPageNumber()-1}">&lt;</button>
+                    <span th:text="${'Страница: '+paging.getPageNumber()}"></span>
+                    <button th:if="${paging.isHasNext()}" name="pageNumber" th:value="${paging.getPageNumber()+1}">&gt;</button>
+                </p>
+            </form>
+        </td>
+    </tr>
+    <tr th:each="itemsRow : ${items}">
+        <td th:each="item : ${itemsRow}">
+            <table>
+                <tr>
+                    <td>
+                        <a th:href="${'/items/'+item.getId()}">
+                            <img width="300" height="300" th:src="${item.getImagePath()}">
+                        </a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <b th:text="${item.getTitle()}"></b>
+                    </td>
+                    <td>
+                        <b th:text="${item.getPrice()}+' руб.'"></b>
+                    </td>
+                </tr>
+                <tr>
+                    <td th:text="${item.getDescription()}"></td>
+                </tr>
+                <tr>
+                    <td>
+                        <form th:action="${'/main/items/'+item.getId()}" method="post">
+                            <button name="action" value="minus">-</button>
+                            <span th:text="${item.getCount()}"></span>
+                            <button name="action" value="plus">+</button>
+                            <button name="action" value="plus" th:if="${item.getCount()==0}" style="float:right;">В корзину</button>
+                        </form>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+
+</html>

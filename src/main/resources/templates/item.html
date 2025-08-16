@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<<<<<<< HEAD
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Витрина товаров</title>
+    <meta charset="UTF-8">
+    =======
+    <html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+    <head>
+        <title>Витрина товаров</title>
+        >>>>>>> main
+    </head>
+
+    <body>
+    <a href="/orders" style="float:right;">
+        <b>ЗАКАЗЫ &cudarrr;</b>
+    </a>
+    <a href="/cart/items" style="float:right;">
+        <b>КОРЗИНА &cudarrr;</b>
+    </a>
+    <a href="/main/items" style="float:right;">
+        <b>ГЛАВНАЯ &cudarrr;</b>
+    </a>
+    <div style="width:70%;margin-left:auto;margin-right:auto;">
+        <p>
+            <img width="300" height="300" th:src="${item.getImagePath()}">
+        </p>
+        <td>
+            <b th:text="${item.getTitle()}"></b>
+        </td>
+        <td>
+            <b th:text="${item.getPrice()}+' руб.'"></b>
+        </td>
+        <p>
+            <span th:text="${item.getDescription()}"></span>
+        </p>
+        <<<<<<< HEAD
+
+        =======
+        >>>>>>> main
+        <form th:action="${'/items/'+item.getId()}" method="post">
+            <button name="action" value="minus">-</button>
+            <span th:text="${item.getCount()}"></span>
+            <button name="action" value="plus">+</button>
+            <button name="action" value="plus" th:if="${item.getCount()==0}" style="float:right;">В корзину</button>
+        </form>
+    </div>
+    </body>
+
+    </html>

@@ -8,6 +8,7 @@ import com.example.online_shop.service.CartService;
 import com.example.online_shop.service.ItemService;
 import com.example.online_shop.service.OrderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.MultiValueMap;
@@ -15,6 +16,12 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.util.function.Function;
 
 @Controller
@@ -23,6 +30,8 @@ public class ShopController {
     private final ItemService itemService;
     private final OrderService orderService;
     private final CartService cartService;
+    private final PaymentsService paymentsService;
+    private final UserService userService;
 
     /**
      * GET "/" — редирект на "/main/items".
@@ -53,17 +62,17 @@ public class ShopController {
      */
 
     @GetMapping("/main/items")
-    public Mono<String> getItems(Model model,
+    public Mono<String> getItems(Model model, Principal principal,
                                  @RequestParam(defaultValue = "", name = "search") String search,
                                  @RequestParam(defaultValue = "NO", name = "sort") String sort,
                                  @RequestParam(defaultValue = "1", name = "pageNumber") int pageNumber,
                                  @RequestParam(defaultValue = "10", name = "pageSize") int pageSize) {
 
-        Mono<ItemsWithPagingDto> items = itemService.getItems(search, sort, pageNumber, pageSize);
-        model.addAttribute("items", items.map(ItemsWithPagingDto::getItems));
+        model.addAttribute("items", itemService.getItems(search, sort, pageNumber, pageSize,
+                principal == null ? "" : principal.getName()));
         model.addAttribute("search", search);
         model.addAttribute("sort", sort);
-        model.addAttribute("paging", items.map(ItemsWithPagingDto::getPaging));
+        model.addAttribute("paging", itemService.getPaging(search, sort, pageNumber, pageSize));
         return Mono.just("main");
 
     }
@@ -92,13 +101,14 @@ public class ShopController {
      * @return шаблон "cart.html"
      */
     @GetMapping("/cart/items")
-    public Mono<String> getChart(Model model) {
-        CartDto cartCopy = cartService.getCart();
-        model.addAttribute("items", cartCopy.getItems().values());
-        model.addAttribute("total", cartCopy.getTotal());
-        model.addAttribute("empty", cartCopy.isEmpty());
-        return Mono.just("cart");
-
+    public Mono<String> getChart(Model model, Principal principal) {
+        return cartService.getCart(principal == null ? "" : principal.getName())
+                .doOnNext(cart -> model.addAttribute("items", cart.getItems().values()))
+                .doOnNext(cart -> model.addAttribute("total", cart.getTotal()))
+                .doOnNext(cart -> model.addAttribute("empty", cart.isEmpty()))
+                .zipWith(paymentsService.getBalance().onErrorReturn(BigDecimal.valueOf(-1)).log(), (cart, balance) ->
+                        model.addAttribute("canBuy", balance.compareTo(cart.getTotal()) >= 0))
+                .map(cart -> "cart");
     }
 
     /*
@@ -114,6 +124,7 @@ public class ShopController {
     public Mono<String> changeItemCountInCart(@PathVariable("id") Long id,
                                               ServerWebExchange exchange) {
         return inspectRequest(id, exchange)
+                .onErrorComplete() // игнор ошибки
                 .map(itemDto -> "redirect:/cart/items");
     }
 
@@ -125,8 +136,8 @@ public class ShopController {
      * @return "item"
      */
     @GetMapping("/items/{id}")
-    public Mono<String> getItem(@PathVariable("id") Long id, Model model) {
-        return itemService.getItemDtoById(id)
+    public Mono<String> getItem(@PathVariable("id") Long id, Model model, Principal principal) {
+        return itemService.getItemDtoById(id, principal == null ? "" : principal.getName())
                 .doOnNext(item -> model.addAttribute("item", item))
                 .map(order -> "item");
     }
@@ -142,7 +153,7 @@ public class ShopController {
     public Mono<String> changeItemsCount(@PathVariable("id") Long id,
                                          ServerWebExchange exchange) {
         return inspectRequest(id, exchange)
-                .map(itemDto -> "redirect:/items/" + itemDto.getId());
+                .map(itemDto -> "redirect:/items/" + id);
     }
 
     /**
@@ -151,9 +162,11 @@ public class ShopController {
      * @return редирект на "/orders/{id}?newOrder=true"
      */
     @PostMapping("/buy")
-    public Mono<String> buy() {
-        return orderService.buy()
-                .map(id -> "redirect:/orders/" + id + "?newOrder=true");
+    public Mono<String> buy(Principal principal) {
+        return orderService.buy(principal == null ? "" : principal.getName())
+                .map(id -> "redirect:/orders/" + id + "?newOrder=true")
+                .onErrorReturn("redirect:/error?message="
+                        + URLEncoder.encode("Недостаточно средств. Пополните счёт и повторите попытку"));
     }
 
     /**
@@ -201,7 +214,8 @@ public class ShopController {
      *
      * @return "add-item.html"
      */
-    @GetMapping("/main/items/add")
+    @GetMapping("/admin/items/add")
+    @PostAuthorize("hasRole('ADMIN')")
     public Mono<String> addItemPage() {
         return Mono.just("add-item");
     }
@@ -212,21 +226,55 @@ public class ShopController {
      * @param item "multipart/form-data"
      * @return редирект на "/items/{id}"
      */
-    @PostMapping("/main/items")
+    @PostMapping("/admin/items/add")
+    @PostAuthorize("hasRole('ADMIN')")
     public Mono<String> addItem(@ModelAttribute("item") Mono<ItemCreateDto> item) {
         return itemService.saveItem(item)
                 .map(itemDto -> "redirect:/items/" + itemDto.getId());
     }
 
 
+    @GetMapping("/signup")
+    public Mono<String> addUserPage() {
+        return Mono.just("add-user");
+    }
+
+    /**
+     * POST "/signup" - создание аккаунта
+     *
+     * @param "login"    - название товара
+     * @param "password" - текст товара
+     * @return редирект на форму логина "/login"
+     */
+
+    @PostMapping("/signup")
+    public Mono<String> addUser(@ModelAttribute("user") Mono<NewUserDto> user) throws UnsupportedEncodingException {
+        return userService.addUser(user)
+                .log()
+                .onErrorReturn("redirect:/error?message="
+                        + URLEncoder.encode("пользователь с таким логином уже существует", StandardCharsets.UTF_8))
+                .map(login -> "redirect:/login");
+    }
+
+    /**
+     * GET "/error" - страница сообщения об ошибке
+     *
+     * @return шаблон "error.html"
+     */
+    @GetMapping("/error")
+    public Mono<String> getError(Model model,
+                                 @RequestParam(defaultValue = "Повторите операцию позже", name = "message") String message)
+            throws UnsupportedEncodingException {
+        model.addAttribute("message", URLDecoder.decode(message, StandardCharsets.UTF_8));
+        return Mono.just("error");
+    }
 
     private Mono<ItemDto> inspectRequest(Long id, ServerWebExchange exchange) {
         return exchange.getFormData()
                 .map(MultiValueMap::toSingleValueMap)
-                .map(map -> {
-                    return map.get("action");
-                })
-                .map(action -> itemService.actionWithItemInCart(id, action))
+                .map(map -> map.get("action"))
+                .zipWith(exchange.getPrincipal().map(Principal::getName), (action, login)
+                        -> itemService.actionWithItemInCart(id, action, login))
                 .flatMap(Function.identity());
     }
 }

@@ -11,16 +11,13 @@ import java.math.BigDecimal;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class OrderItemDetailDto {
-    private Long orderId;
+public class ItemInCartDto {
     private Long id;
     private String title;
+    private int count;
+    private BigDecimal price;
     private String description;
     private String imagePath;
-    private int count;
-    @Builder.Default
-    private BigDecimal price = BigDecimal.valueOf(0);
-    @Builder.Default
-    private BigDecimal totalSum = BigDecimal.valueOf(0);
-
+    private String login;
+    private Long itemId;
 }

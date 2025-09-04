@@ -1,7 +1,6 @@
 package com.example.online_shop.mapper;
 
 import com.example.online_shop.model.dto.ItemDto;
-import com.example.online_shop.model.dto.OrderItemDetailDto;
 import com.example.online_shop.model.entity.ItemInOrder;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -39,10 +38,6 @@ public class ItemInOrderMapper {
 
     public List<ItemInOrder> toItemInOrderList(List<ItemDto> entities) {
         return entities.stream().map(this::toItemInOrder).toList();
-    }
-
-    public ItemDto toItemInOrder(OrderItemDetailDto item) {
-        return mapper.map(item, ItemDto.class);
     }
 
 }

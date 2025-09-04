@@ -16,10 +16,10 @@ public class OrderDto implements Comparable<OrderDto> {
     private Long id;
     private List<ItemDto> items;
     private BigDecimal totalSum;
+    private String login;
 
     @Override
     public int compareTo(OrderDto o) {
-        return Long.compare(o.id, this.id);
-
+        return Long.compare(this.id, o.id) * -1;
     }
 }

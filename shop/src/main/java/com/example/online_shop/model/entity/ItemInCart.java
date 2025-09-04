@@ -9,14 +9,20 @@ import java.math.BigDecimal;
 
 @Data
 @Builder
+@EqualsAndHashCode
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("orders")
-public class Order {
+@Table("items_in_cart")
+public class ItemInCart {
     @Id
     private Long id;
-    @Column("total_sum")
-    private BigDecimal totalSum;
+    private String title;
+    private int count;
+    private BigDecimal price;
+    private String description;
+    @Column("image_path")
+    private String imagePath;
     private String login;
-
+    @Column("item_id")
+    private Long itemId;
 }

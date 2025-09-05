@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Slf4j
 @AutoConfigureWebTestClient
-public class IntegrationControllerTest extends OnlineShopApplicationTests {
+public class IntegrationControllerTest extends ShopApplicationTests {
     @Autowired
     private WebTestClient webTestClient;
     @Autowired

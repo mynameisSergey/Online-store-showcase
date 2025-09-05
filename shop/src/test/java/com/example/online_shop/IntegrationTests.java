@@ -22,7 +22,7 @@ import java.util.function.Function;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
-public class IntegrationTests extends OnlineShopApplicationTests {
+public class IntegrationTests extends ShopApplicationTests {
     @Autowired
     private OrderService orderService;
     @Autowired

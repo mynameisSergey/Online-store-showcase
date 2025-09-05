@@ -1,3 +1,5 @@
 databaseChangeLog:
-  -include:
-    file: db/changelog/changelog-base-structures.yaml
+  - include:
+      file: db/changelog/changelog-base-structures.yaml
+  - includeAll:
+      path: db/changelog/patches/

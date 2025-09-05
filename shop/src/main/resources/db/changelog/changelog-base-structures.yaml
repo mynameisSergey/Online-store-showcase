@@ -1,44 +1,47 @@
 databaseChangeLog:
-  -changeSet:
-    id: create_item
-    author: Sergey Iakovlev
-    changes:
-      - createTable:
-          tableName: items
-          remarks: Товары
-          columns:
-            - column:
-                constraints:
-                  nullable: false
-                  primaryKey: true
-                name: id
-                type: bigserial
-                remarks: id товара
-                autoIncrement: true
-            - column:
-                constraints:
-                  nullble: false
-                name: title
-                type: varchar(250)
-                remarks: Наименование товара
-            - column:
-                constraints:
-                  nullable: false
-                name: description
-                type: text
-                remarks: Описание товара
-            - column:
-                name: price
-                type: numeric
-                remarks: Цена товара
-                defaultValueNumeric: "0"
-            - column:
-                name: image
-                type: bytea
-                remarks: Изображение товара
-    -changeSet:
+  - changeSet:
+      id: create_item
+      author: Sergey Iakovlev
+      failOnError: false
+      changes:
+        - createTable:
+            tableName: items
+            remarks: Товары
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                  name: id
+                  type: bigserial
+                  remarks: id товара
+                  autoIncrement: true
+              - column:
+                  constraints:
+                    nullable: false
+                  name: title
+                  type: varchar(250)
+                  remarks: Наименование товара
+              - column:
+                  constraints:
+                    nullable: false
+                  name: description
+                  type: text
+                  remarks: Описание товара
+              - column:
+                  name: price
+                  type: numeric
+                  remarks: Цена
+                  defaultValueNumeric: "0"
+              - column:
+                  name: image
+                  type: bytea
+                  remarks: Картинка
+
+  - changeSet:
       id: create_orders
       author: Sergey Iakovlev
+      failOnError: false
       changes:
         - createTable:
             tableName: orders
@@ -48,90 +51,91 @@ databaseChangeLog:
                   constraints:
                     nullable: false
                     primaryKey: true
-                    name: id
-                    type: bigserial
-                    remarks: id заказа
-                    autoIncrement: true
+                  name: id
+                  type: bigserial
+                  remarks: id заказа
+                  autoIncrement: true
               - column:
                   constraints:
                     nullable: false
-                    name: total_sum
-                    type: number
-                    remarks: сумма заказа
-                    defaultValueNumeric: "0"
-      -changeSet:
-        id: create_items_in_order
-        author: Sergey Iakovlev
-        changes:
-          - createTable:
-              tableName: items_in_order
-              remarks: Связи товаров с заказами
-              columns:
-                -column:
+                  name: total_sum
+                  type: number
+                  remarks: сумма заказа
+                  defaultValueNumeric: "0"
+
+  - changeSet:
+      id: create_items_in_order
+      author: Sergey Iakovlev
+      failOnError: false
+      changes:
+        - createTable:
+            tableName: items_in_order
+            remarks: Связи товаров с заказами
+            columns:
+              - column:
                   constraints:
                     nullable: false
                     primaryKey: true
-                    name: id
-                    type: bigserial
-                    remarks: id связи
-                  -column:
-                    constraints:
-                      nullable: false
-                    name: title
-                    type: varchar(250)
-                    remarks: Наименование товара
-                    -column:
-                      name: image_path
-                      type: varchar(250)
-                      remarks: Ссылка для картинки
-                      -column:
-                        name: description
-                        type: text
-                        remarks: Описание товара
-                        -column:
-                          name: price
-                          type: numeric
-                          remarks: Цена
-                          defaultValueNumeric: "0"
-                          -column:
-                            name: count
-                            type: int
-                            remarks: Количество товара в заказе
-                            defaultValueNumeric: "0"
-                            -column:
-                              constraints:
-                                nullable: false
-                              name: order_id
-                              type: bigint
-                              remarks: Ссылка на id товара в заказе
+                  name: id
+                  type: bigserial
+                  remarks: id связи
+              - column:
+                  constraints:
+                    nullable: false
+                  name: title
+                  type: varchar(250)
+                  remarks: Наименование товара
+              - column:
+                  name: image_path
+                  type: varchar(250)
+                  remarks: Ссылка для картинки
+              - column:
+                  name: description
+                  type: text
+                  remarks: Описание товара
+              - column:
+                  name: price
+                  type: numeric
+                  remarks: Цена
+                  defaultValueNumeric: "0"
+              - column:
+                  name: count
+                  type: int
+                  remarks: Количество товара в заказе
+                  defaultValueNumeric: "0"
+              - column:
+                  constraints:
+                    nullable: false
+                  name: order_id
+                  type: bigint
+                  remarks: Ссылка на номер заказа
+              - column:
+                  name: item_id
+                  type: bigint
+                  remarks: Ссылка на id товара в заказе
 
-        -changeSet:
-          id: create_fc_constraint
-          author: Sergey Iakovlev
-          changes:
-            - addForeignKeyConstraint:
-                baseTableName: items_in_order
-                baseColumnNames: order_id
-                constraintName: items_in_order_fk
-                deferrable: false
-                initiallyDeferred: false
-                onDelete: no action
-                onUpdate: no action
-                referencedColumnNames: id
-                referencedTableName: orders
+  - changeSet:
+      id: create_fk_constraint
+      author: Sergey Iakovlev
+      failOnError: false
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: items_in_order
+            baseColumnNames: order_id
+            constraintName: items_in_order_fk
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: no action
+            onUpdate: no action
+            referencedColumnNames: id
+            referencedTableName: orders
 
-          -changeSet:
-            id: create_items_in_order_seq
-            author: Sergey Iakovlev
-            changes:
-              - createSequence:
-                  sequenceName: items_in_order_seq
-                  incrementBy: 1
-                  minValue: 1
-
-
-
-
-
-
-
+  - changeSet:
+      id: create_items_in_order_seq
+      author: Sergey Iakovlev
+      failOnError: false
+      changes:
+        - createSequence:
+            sequenceName: items_in_order_seq
+            incrementBy: 1
+            minValue: 1

@@ -1,0 +1,109 @@
+
+databaseChangeLog:
+  - changeSet:
+      id: add_login_column_in_orders
+      author: Sergey Iakovlev
+      failOnError: false
+      changes:
+        - addColumn:
+            tableName: orders
+            columns:
+              - column:
+                  constraints:
+                    foreignKeyName: user_fk
+                    references: users(login)
+                  name: login
+                  type: varchar(250)
+                  remarks: логин пользователя
+  - changeSet:
+      id: create_items_in_cart
+      author: Sergey Iakovlev
+      failOnError: false
+      changes:
+        - createTable:
+            tableName: items_in_cart
+            remarks: Корзина пользователя
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                  name: id
+                  type: bigserial
+                  remarks: id связи
+              - column:
+                  constraints:
+                    nullable: false
+                  name: title
+                  type: varchar(250)
+                  remarks: Наименование товара
+              - column:
+                  name: image_path
+                  type: varchar(250)
+                  remarks: Ссылка для картинки
+              - column:
+                  name: description
+                  type: text
+                  remarks: Описание товара
+              - column:
+                  name: price
+                  type: numeric
+                  remarks: Цена
+                  defaultValueNumeric: "0"
+              - column:
+                  name: count
+                  type: int
+                  remarks: Количество товара в корзине
+                  defaultValueNumeric: "0"
+              - column:
+                  constraints:
+                    nullable: false
+                  name: login
+                  type: varchar(250)
+                  remarks: Логин пользователя
+              - column:
+                  name: item_id
+                  type: bigint
+                  remarks: Ссылка на id товара в корзине
+
+  - changeSet:
+      id: create_fk_items_in_cart_items_constraint
+      author: Sergey Iakovlev
+      failOnError: false
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: items_in_cart
+            baseColumnNames: item_id
+            constraintName: items_in_cart_item_fk
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: no action
+            onUpdate: no action
+            referencedColumnNames: id
+            referencedTableName: items
+
+  - changeSet:
+      id: create_fk_items_in_cart_users_constraint
+      author: Sergey Iakovlev
+      failOnError: false
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: items_in_cart
+            baseColumnNames: login
+            constraintName: items_in_cart_cart_fk
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: no action
+            onUpdate: no action
+            referencedColumnNames: login
+            referencedTableName: users
+
+  - changeSet:
+      id: create_items_in_cart_seq
+      author: Sergey Iakovlev
+      failOnError: false
+      changes:
+        - createSequence:
+            sequenceName: items_in_cart_seq
+            incrementBy: 1
+            minValue: 1

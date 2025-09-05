@@ -1,0 +1,30 @@
+
+databaseChangeLog:
+  - changeSet:
+      id: create_user
+      author: Sergey Iakovlev
+      failOnError: false
+      changes:
+        - createTable:
+            tableName: users
+            remarks: Пользователи
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                  name: login
+                  type: varchar(250)
+                  remarks: логин пользователя
+              - column:
+                  constraints:
+                    nullable: false
+                  name: password
+                  type: varchar(2000)
+                  remarks: hash пароля пользователя
+              - column:
+                  constraints:
+                    nullable: false
+                  name: roles
+                  type: varchar(2000)
+                  remarks: список ролей пользователя через ","

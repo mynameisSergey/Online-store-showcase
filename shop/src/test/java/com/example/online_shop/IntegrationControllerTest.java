@@ -2,12 +2,15 @@ package com.example.online_shop;
 
 import com.example.online_shop.controller.ShopController;
 import com.example.online_shop.model.dto.ItemCreateDto;
+import com.example.online_shop.model.dto.NewUserDto;
 import com.example.online_shop.model.dto.OrderDto;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithAnonymousUser;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -48,6 +51,7 @@ public class IntegrationControllerTest extends OnlineShopApplicationTests {
      */
 
     @Test
+    @WithAnonymousUser
     void testGetItems() throws Exception {
         webTestClient.get()
                 .uri("/main/items")
@@ -70,6 +74,7 @@ public class IntegrationControllerTest extends OnlineShopApplicationTests {
      * @return шаблон "cart.html"
      */
     @Test
+    @WithMockUser(username = "user")
     void testGetItemsInCart() throws Exception {
         webTestClient.get()
                 .uri("/cart/items")
@@ -92,6 +97,7 @@ public class IntegrationControllerTest extends OnlineShopApplicationTests {
      * @return редирект на "/main/items"
      */
     @Test
+    @WithMockUser(username = "user")
     void testChangeItemsCountInCartWhenInItems() throws Exception {
         getLastItem().publishOn(Schedulers.boundedElastic()).doOnNext(itemDto -> {
             webTestClient.post()
@@ -105,14 +111,34 @@ public class IntegrationControllerTest extends OnlineShopApplicationTests {
     }
 
     /*
-     * POST "/items/{id}" - изменить количество товара в корзине
+     * POST "/cart/items/{id}" - изменить количество товара в корзине
      *
      * @param id     товара
      * @param action значение из перечисления PLUS|MINUS|DELETE (PLUS - добавить один товар, MINUS - удалить один товар, DELETE - удалить товар из корзины)
      * @return "redirect:/items/"
      */
     @Test
+    @WithMockUser(username = "user")
     void testChangeItemsCountInCartWhenInCart() throws Exception {
+        getLastItem().publishOn(Schedulers.boundedElastic()).doOnNext(itemDto -> {
+            webTestClient.post()
+                    .uri("/cart/items/" + itemDto.getId())
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .bodyValue("action=PLUS")
+                    .exchange()
+                    .expectStatus().is3xxRedirection()
+                    .expectHeader().valueEquals("Location", "/cart/items");
+        }).subscribe();
+    }
+
+    /*
+        ж) POST "/items/{id}" - изменить количество товара в корзине
+           Параматры: action - значение из перечисления PLUS|MINUS|DELETE (PLUS - добавить один товар, MINUS - удалить один товар, DELETE - удалить товар из корзины)
+           Возвращает: редирект на "/items/{id}"
+       */
+    @Test
+    @WithMockUser(username = "user")
+    void testChangeItemsCountInCartWhenInItem() throws Exception {
         getLastItem().publishOn(Schedulers.boundedElastic()).doOnNext(itemDto -> {
             webTestClient.post()
                     .uri("/items/" + itemDto.getId())
@@ -120,7 +146,7 @@ public class IntegrationControllerTest extends OnlineShopApplicationTests {
                     .bodyValue("action=PLUS")
                     .exchange()
                     .expectStatus().is3xxRedirection()
-                    .expectHeader().valueEquals("Location", "/items");
+                    .expectHeader().valueEquals("Location", "/items/" + itemDto.getId());
         }).subscribe();
     }
 
@@ -132,6 +158,7 @@ public class IntegrationControllerTest extends OnlineShopApplicationTests {
      * @return "item"
      */
     @Test
+    @WithAnonymousUser
     void testGetItem() throws Exception {
         getAnyItem().publishOn(Schedulers.boundedElastic()).doOnNext(itemDto ->
                 webTestClient.get()
@@ -153,6 +180,7 @@ public class IntegrationControllerTest extends OnlineShopApplicationTests {
      */
 
     @Test
+    @WithMockUser(username = "user")
     void testBuy() throws Exception {
         getLastOrder().publishOn(Schedulers.boundedElastic()).doOnNext(orderDto ->
                         webTestClient.post()
@@ -176,6 +204,7 @@ public class IntegrationControllerTest extends OnlineShopApplicationTests {
      * @return "orders.html"
      */
     @Test
+    @WithMockUser(username = "user")
     void tstGetOrders() throws Exception {
         webTestClient.get()
                 .uri("/orders")
@@ -198,6 +227,7 @@ public class IntegrationControllerTest extends OnlineShopApplicationTests {
      * @return "order.html"
      */
     @Test
+    @WithMockUser(username = "user")
     void testGetOrder() throws Exception {
         getLastOrder().publishOn(Schedulers.boundedElastic()).doOnNext(orderDto ->
                         webTestClient.get()
@@ -220,9 +250,10 @@ public class IntegrationControllerTest extends OnlineShopApplicationTests {
      * @return "add-item.html"
      */
     @Test
+    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
     void testAddItemPage() throws Exception {
         webTestClient.get()
-                .uri("/main/items/add")
+                .uri("/admin/items/add")
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.TEXT_HTML)
@@ -239,6 +270,7 @@ public class IntegrationControllerTest extends OnlineShopApplicationTests {
      * @return редирект на "/items/{id}"
      */
     @Test
+    @WithMockUser(username = "admin", password = "admin", roles = "ADMIN")
     void testAddItem() throws Exception {
         getLastItem().map(itemDto ->
                         Mono.just(ItemCreateDto.builder()
@@ -248,11 +280,46 @@ public class IntegrationControllerTest extends OnlineShopApplicationTests {
                                         .build())
                                 .publishOn(Schedulers.boundedElastic())
                                 .doOnNext(item -> webTestClient.post()
-                                        .uri("/main/items")
+                                        .uri("/admin/items/add")
                                         .bodyValue(item)
                                         .exchange()
                                         .expectStatus().is3xxRedirection()
                                         .expectHeader().valueEquals("Location", "/items/" + (itemDto.getId() + 1))))
+                .subscribe();
+    }
+
+        /*
+    GET "/signup" - регистрация пользователя
+    Возвращает: шаблон "add-user.html"
+*/
+    @Test
+    void testAddUserPage() throws Exception {
+        webTestClient
+                .get()
+                .uri("/signup")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.TEXT_HTML)
+                .expectBody(String.class).consumeWith(response -> {
+                    String body = response.getResponseBody();
+                    assertNotNull(body);
+                    assertTrue(body.contains("<h3>Логин</h3>"));
+                });
+    }
+
+    @Test
+    void testAddUser() throws Exception {
+        Mono.just(NewUserDto.builder()
+                .login("test_user")
+                .password("test_user")
+                .build())
+                .publishOn(Schedulers.boundedElastic())
+                .doOnNext(user -> webTestClient.post()
+                .uri("/signup")
+                        .bodyValue(user)
+                        .exchange()
+                        .expectStatus().is3xxRedirection()
+                        .expectHeader().valueEquals("Location", "/login"))
                 .subscribe();
     }
 }

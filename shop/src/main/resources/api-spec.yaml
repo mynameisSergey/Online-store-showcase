@@ -1,0 +1,45 @@
+openapi: 3.0.3
+info:
+  title: Сервис платежей
+  description: Сервис платежей для Витрины платежей
+  version: 1.0.0
+servers:
+  - url: http://localhost:8085
+    description: Payments server
+paths:
+  /api/balance:
+    get:
+      summary: Получить баланс покупателя
+      responses:
+        '200':
+          description: Баланс получен
+          content:
+            application/json:
+              schema:
+                type: number
+    post:
+      summary: Осуществление платежа
+      parameters:
+        - name: amount
+          in: query
+          required: true
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Запрос на осуществление платежа обработан
+          content:
+            application/json:
+              schema:
+                type: boolean
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: http://localhost:8080/realms/master/protocol/openid-connect/auth
+          tokenUrl: http://localhost:8080/realms/master/protocol/openid-connect/token
+          scopes: {}
+security:
+  - oauth2: []

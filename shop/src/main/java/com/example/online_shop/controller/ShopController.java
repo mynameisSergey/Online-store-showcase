@@ -1,12 +1,7 @@
 package com.example.online_shop.controller;
 
-import com.example.online_shop.model.dto.CartDto;
-import com.example.online_shop.model.dto.ItemCreateDto;
-import com.example.online_shop.model.dto.ItemDto;
-import com.example.online_shop.model.dto.ItemsWithPagingDto;
-import com.example.online_shop.service.CartService;
-import com.example.online_shop.service.ItemService;
-import com.example.online_shop.service.OrderService;
+import com.example.online_shop.model.dto.*;
+import com.example.online_shop.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.stereotype.Controller;

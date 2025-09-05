@@ -65,7 +65,7 @@ public class ItemService {
                 .map(itemsListWithCount -> itemsListWithCount.stream()
                         .collect(Collectors.groupingBy(it -> index.getAndIncrement() / itemsRowCount))
                         .values()
-                        .stream().toList();
+                        .stream().toList());
     }
 
     public Mono<PagingParametersDto> getPaging(String search, String sort, int pageNumber, int pagesize) {

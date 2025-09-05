@@ -1,16 +1,62 @@
+
 plugins {
     id 'java'
+    id 'org.springframework.boot' version '3.5.4'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id "org.openapi.generator" version "7.12.0"
 }
 
 group = 'com.example'
 version = '0.0.2-SNAPSHOT'
+description = 'payments-api'
 
 repositories {
     mavenCentral()
 }
 
+openApiGenerate {
+    generatorName.set("spring")
+    inputSpec.set("$projectDir/src/main/resources/api-spec.yaml")
+    outputDir.set("$projectDir/build/generated/")
+    modelPackage.set("main.codegen.com.example.api.model")
+    apiPackage.set("main.codegen.com.example.api")
+    configOptions.set([
+            sourceFolder: "src/gen/java",
+            interfaceOnly: "true",
+            library: "spring-boot",
+            useTags: "true",
+            useSpringBoot3: "true",
+            lombok: "true"
+    ])
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir "$projectDir/build/generated/src/gen/java"
+        }
+    }
+}
+
+tasks.named('compileJava') {
+    dependsOn(tasks.openApiGenerate)
+}
+
 dependencies {
-    testImplementation platform('org.junit:junit-bom:5.10.0')
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'io.swagger.core.v3:swagger-annotations:2.2.28'
+    implementation 'org.apache.httpcomponents.client5:httpclient5:5.4.3'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+    implementation 'org.springframework.security:spring-security-oauth2-jose'
+    implementation 'org.springframework.security:spring-security-oauth2-core'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.projectlombok:lombok:1.18.26'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
 }
 

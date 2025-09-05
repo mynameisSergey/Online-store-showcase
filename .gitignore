@@ -1,6 +1,8 @@
 HELP.md
 .gradle
 build/
+!payments-api/build/libs/*.jar
+!shop/build/libs/*.jar
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
@@ -37,7 +39,7 @@ out/
 .vscode/
 
 *.txt
-work.sql
+*.work.sql
 *.DS_Store
 *.log
 *.log.*

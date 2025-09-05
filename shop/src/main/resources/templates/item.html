@@ -1,33 +1,46 @@
 <!DOCTYPE html>
 <html lang="ru" xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <title>Витрина товаров</title>
     <meta charset="UTF-8">
 </head>
+
 <body>
+<a href="/signup" style="float:right;">
+    <b>СОЗДАТЬ АККАУНТ &cudarrr;</b>
+</a>
 <a href="/orders" style="float:right;">
-    <b>ЗАКАЗЫ ↓</b>
+    <b>ЗАКАЗЫ &cudarrr;</b>
 </a>
 <a href="/cart/items" style="float:right;">
-    <b>КОРЗИНА ↓</b>
+    <b>КОРЗИНА &cudarrr;</b>
 </a>
 <a href="/main/items" style="float:right;">
-    <b>ГЛАВНАЯ ↓</b>
+    <b>ГЛАВНАЯ &cudarrr;</b>
 </a>
+<tr>
+    <td style="text-align:right">
+        <form action="/login" method="post">
+            <button name="login" style="float:right;">Войти</button>
+        </form>
+    </td>
+</tr>
 <div style="width:70%;margin-left:auto;margin-right:auto;">
     <p>
         <img width="300" height="300" th:src="${item.getImagePath()}">
     </p>
-    <table>
-        <tr>
-            <td><b th:text="${item.getTitle()}"></b></td>
-            <td><b th:text="${item.getPrice()} + ' руб.'"></b></td>
-        </tr>
-    </table>
+    <td>
+        <b th:text="${item.getTitle()}"></b>
+    </td>
+    <td>
+        <b th:text="${item.getPrice()}+' руб.'"></b>
+    </td>
     <p>
         <span th:text="${item.getDescription()}"></span>
     </p>
-    <form th:action="${'/items/' + item.getId()}" method="post">
+
+    <form th:action="${'/items/'+item.getId()}" method="post">
         <button name="action" value="minus">-</button>
         <span th:text="${item.getCount()}"></span>
         <button name="action" value="plus">+</button>
@@ -35,4 +48,5 @@
     </form>
 </div>
 </body>
+
 </html>

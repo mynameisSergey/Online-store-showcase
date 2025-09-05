@@ -8,24 +8,24 @@
 
 <body>
 <a href="/cart/items" style="float:right;">
-    <b>КОРЗИНА ↓</b>
+    <b>КОРЗИНА &cudarrr;</b>
 </a>
 <a href="/main/items" style="float:right;">
-    <b>ГЛАВНАЯ ↓</b>
+    <b>ГЛАВНАЯ &cudarrr;</b>
 </a>
 <table style="width:70%;margin-left:auto;margin-right:auto;">
-    <tr th:each="order: ${orders}">
+    <tr th:each="order : ${orders}">
         <td>
             <h2>
-                <a th:text="${'Заказ №' + order.getId()}" th:href="${'/orders/' + order.getId()}"></a>
+                <a th:text="${'Заказ №'+order.getId()}" th:href="${'/orders/'+order.getId()}"></a>
             </h2>
             <table>
-                <tr th:each="item: ${order.getItems()}">
-                    <td th:text="${item.getTitle() + ' (' + item.getCount() + ' шт.) ' + (item.getPrice() * item.getCount()) + ' руб.'}"></td>
+                <tr th:each="item : ${order.getItems()}">
+                    <td th:text="${item.getTitle()+' ('+item.getCount()+' шт.) '+(item.getPrice()*item.getCount())+' руб.'}"></td>
                 </tr>
             </table>
             <p>
-                <b th:text="${'Сумма: ' + order.getTotalSum() + ' руб.'}"></b>
+                <b th:text="${'Сумма: '+order.getTotalSum()}+' руб.'"></b>
             </p>
         </td>
     </tr>

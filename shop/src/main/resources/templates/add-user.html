@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Создать аккаунт</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+<a href="/main/items" style="float:right;">
+    <b>НА ГЛАВНУЮ &cudarrr;</b>
+</a>
+
+<form th:action="${'/signup'}" method="POST">
+    <table style="width:50%;margin-left:auto;margin-right:auto;">
+        <tr>
+            <td>
+                <h3>Логин</h3>
+                <textarea rows="2" style="width: 100%;" name="login" th:text="${''}"></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <h3>Пароль</h3>
+                <textarea rows="2" style="width: 100%;" name="password" th:text="${''}"></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <button id="addUserButton" style="float:right;" th:text="${'Сохранить'}"></button>
+            </td>
+        </tr>
+    </table>
+</form>
+
+</body>
+</html>

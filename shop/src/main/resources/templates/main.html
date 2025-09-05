@@ -7,12 +7,22 @@
 </head>
 
 <body>
+<a href="/signup" style="float:right;">
+    <b>СОЗДАТЬ АККАУНТ &cudarrr;</b>
+</a>
 <a href="/orders" style="float:right;">
-    <b>ЗАКАЗЫ ↓</b>
+    <b>ЗАКАЗЫ &cudarrr;</b>
 </a>
 <a href="/cart/items" style="float:right;">
-    <b>КОРЗИНА ↓</b>
+    <b>КОРЗИНА &cudarrr;</b>
 </a>
+<tr>
+    <td style="text-align:right">
+        <form action="/login" method="post">
+            <button name="login" style="float:right;">Войти</button>
+        </form>
+    </td>
+</tr>
 <table style="width:70%;margin-left:auto;margin-right:auto;">
     <tr>
         <td>
@@ -48,13 +58,13 @@
             </form>
         </td>
     </tr>
-    <tr th:each="itemsRow: ${items}">
-        <td th:each="item: ${itemsRow}">
+    <tr th:each="itemsRow : ${items}">
+        <td th:each="item : ${itemsRow}">
             <table>
                 <tr>
                     <td>
                         <a th:href="${'/items/'+item.getId()}">
-                            <img width="300" height="300" th:src="${item.getImagePath()}"/>
+                            <img width="300" height="300" th:src="${item.getImagePath()}">
                         </a>
                     </td>
                 </tr>
@@ -63,7 +73,7 @@
                         <b th:text="${item.getTitle()}"></b>
                     </td>
                     <td>
-                        <b th:text="${item.getPrice()} + ' руб.'"></b>
+                        <b th:text="${item.getPrice()}+' руб.'"></b>
                     </td>
                 </tr>
                 <tr>
@@ -71,7 +81,7 @@
                 </tr>
                 <tr>
                     <td>
-                        <form th:action="${'/main/items/' + item.getId()}" method="post">
+                        <form th:action="${'/main/items/'+item.getId()}" method="post">
                             <button name="action" value="minus">-</button>
                             <span th:text="${item.getCount()}"></span>
                             <button name="action" value="plus">+</button>

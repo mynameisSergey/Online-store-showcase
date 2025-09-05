@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Ошибка</title>
+  <meta charset="UTF-8">
+</head>
+
+<body>
+<a href="/signup" style="float:right;">
+  <b>СОЗДАТЬ АККАУНТ &cudarrr;</b>
+</a>
+<a href="/main/items" style="float:right;">
+  <b>НА ГЛАВНУЮ &cudarrr;</b>
+</a>
+<a href="/orders" style="float:right;">
+  <b>ЗАКАЗЫ &cudarrr;</b>
+</a>
+<a href="/cart/items" style="float:right;">
+  <b>КОРЗИНА &cudarrr;</b>
+</a>
+<tr>
+  <td style="text-align:right">
+    <form action="/login" method="post">
+      <button name="login" style="float:right;">Войти</button>
+    </form>
+  </td>
+</tr>
+<table style="width:70%;margin-left:auto;margin-right:auto;">
+  <tr>
+    <td>
+      <h2 th:text="${'Произошла ошибка при выполнении операции: '+message}"></h2>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

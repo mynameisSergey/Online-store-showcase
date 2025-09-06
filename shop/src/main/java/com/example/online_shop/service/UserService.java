@@ -31,22 +31,23 @@ public class UserService implements ReactiveUserDetailsService {
                 .map(userMapper::toUserDto);
     }
 
-    public Mono<String> addUser(Mono<NewUserDto> user) {
-        return user.flatMap(newUser -> userRepository.findUserByLoginIgnoreCase(newUser.getLogin())
-                        .flatMap(userDto -> Mono.error(new UserAlreadyExistsException(userDto.getLogin())))
-                        .log()
-                        .switchIfEmpty(Mono.defer(() -> user.flatMap(createdUser -> {
-                            createdUser.setPassword(encoder.encode(createdUser.getPassword()));
-                            createdUser.setRoles(EUserRole.ROLE_USER.name());
-                            return userRepository.save(userMapper.toUser(createdUser))
-                                    .map(userMapper::toUserDto)
-                                    .map(UserDto::getLogin);
-                        }).log())))
-                .thenReturn(user.map(createdUser ->
-                        userRepository.findUserByLoginIgnoreCase(createdUser.getLogin())))
-                .flatMap(Function.identity()).flatMap(Function.identity())
-                .map(userMapper::toUserDto)
-                .map(UserDto::getLogin);
+
+    public Mono<String> addUser(Mono<NewUserDto> userMono) {
+        return userMono
+                .flatMap((NewUserDto newUser) ->
+                        userRepository.findUserByLoginIgnoreCase(newUser.getLogin())
+                                .flatMap(found ->
+                                        Mono.<NewUserDto>error(new UserAlreadyExistsException(found.getLogin())))
+                                .switchIfEmpty(Mono.defer(() -> {
+                                    newUser.setPassword(encoder.encode(newUser.getPassword()));
+                                    newUser.setRoles(EUserRole.ROLE_USER.name());
+                                    return Mono.just(newUser);
+                                }))
+                )
+                .flatMap(nu -> userRepository.save(userMapper.toUser(nu))) // теперь nu — NewUserDto
+                .map(User::getLogin);
     }
 
 }
+
+

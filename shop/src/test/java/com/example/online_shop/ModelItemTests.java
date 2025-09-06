@@ -34,8 +34,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest
-@ActiveProfiles("test")
+@ExtendWith(MockitoExtension.class)
 public class ModelItemTests {
     private static final byte[] FAKE_IMAGE = new byte[]{1, 2, 3};
     private static final String IMAGE_PATH = "http://localhost:8084/items/image/";

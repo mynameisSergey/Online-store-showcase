@@ -16,11 +16,7 @@
 
 ✏️ Технологии
 
-⦁ Java 21, Spring Framework
-⦁ PostgreSQL 17.5
-⦁ Redis (для сессий или кеша)
-⦁ Keycloak (авторизация OAuth2/OpenID Connect)
-⦁ OpenAPI для API документации
+⦁ Java 21, Spring Boot(WebFlux, Security, Data R2DBC, Data Redis, Cache, OAuth2 Client и Resource Server), PostgreSQL, Redis (Lettuce), Netty, Liquibase, Lombok, ModelMapper, OpenApi, Apache HttpClient 5, Thymeleaf, Gradle, JUnit 5, Testcontainers,Keycloak, Docker.
 
 ————————
 
